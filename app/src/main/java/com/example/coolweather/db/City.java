@@ -1,42 +1,40 @@
 package com.example.coolweather.db;
 
-import org.litepal.crud.LitePalSupport;
+public class City {
+    private String code;
+    private String name;
+    private String provinceCode;
 
-public class City extends LitePalSupport {
-    private int id;
-    private String cityName;
-    private int cityCode;
-    private int provinceId;
-
-    public int getId() {
-        return id;
+    public City() {
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public City(String code, String name, String provinceCode) {
+        this.code = code;
+        this.name = name;
+        this.provinceCode = provinceCode;
     }
 
-    public String getCityName() {
-        return cityName;
+    public String getName() {
+        return name;
     }
 
-    public void setCityName(String cityName) {
-        this.cityName = cityName;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public int getCityCode() {
-        return cityCode;
+    public String getCode() {
+        return code;
     }
 
-    public void setCityCode(int cityCode) {
-        this.cityCode = cityCode;
+    public void setCode(String code) {
+        this.code = code;
     }
 
-    public int getProvinceId() {
-        return provinceId;
+    public String getProvinceCode() {
+        return provinceCode;
     }
 
-    public void setProvinceId(int provinceId) {
-        this.provinceId = provinceId;
+    public void setProvinceCode(String provinceCode) {
+        this.provinceCode = provinceCode;
     }
 }
