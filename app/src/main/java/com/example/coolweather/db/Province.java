@@ -1,15 +1,23 @@
 package com.example.coolweather.db;
 
 public class Province {
-    private String code;
+    private Integer code;
     private String name;
 
     public Province() {
     }
 
-    public Province(String code, String name) {
+    public Province(Integer code, String name) {
         this.code = code;
         this.name = name;
+    }
+
+    public Integer getCode() {
+        return code;
+    }
+
+    public void setCode(Integer code) {
+        this.code = code;
     }
 
     public String getName() {
@@ -18,13 +26,5 @@ public class Province {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
     }
 }

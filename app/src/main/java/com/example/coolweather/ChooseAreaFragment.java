@@ -1,5 +1,6 @@
 package com.example.coolweather;
 
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
@@ -17,6 +18,7 @@ import android.widget.TextView;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import com.example.coolweather.db.Cities;
 import com.example.coolweather.db.City;
 import com.example.coolweather.db.County;
 import com.example.coolweather.db.DatabaseHelper;
@@ -31,7 +33,6 @@ public class ChooseAreaFragment extends Fragment {
     public static final int LEVEL_PROVINCE = 0;
     public static final int LEVEL_CITY = 1;
     public static final int LEVEL_COUNTY = 2;
-    private ProgressBar progressBar;
     private TextView titleText;
     private Button backButton;
     private ListView listView;
@@ -62,7 +63,6 @@ public class ChooseAreaFragment extends Fragment {
      */
     private int currentLevel;
     private SQLiteDatabase db;
-    private static final String TAG = "ChooseAreaFragment ";
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
@@ -94,6 +94,19 @@ public class ChooseAreaFragment extends Fragment {
                 } else if (currentLevel == LEVEL_CITY) {
                     selectedCity = cityList.get(position);
                     queryCounties();
+                } else if (currentLevel == LEVEL_COUNTY) {
+                    County county = countyList.get(position);
+                    if (getActivity() instanceof MainActivity) {
+                        Intent intent = new Intent(getActivity(), WeatherActivity.class);
+                        intent.putExtra("WeatherCity", county.getCode());
+                        startActivity(intent);
+                        getActivity().finish();
+                    } else if (getActivity() instanceof WeatherActivity) {
+                        WeatherActivity weatherActivity = (WeatherActivity) getActivity();
+                        weatherActivity.drawerlayout.closeDrawers();
+                        weatherActivity.swipeRefresh.setRefreshing(true);
+                        weatherActivity.requestWeatherAllInfo(String.valueOf(county.getCode()));
+                    }
                 }
             }
         });
@@ -118,15 +131,16 @@ public class ChooseAreaFragment extends Fragment {
     private void queryProvinces() {
         titleText.setText("中国");
         backButton.setVisibility(View.GONE);
-        Cursor cursor = db.query("Province", null, null, null, null, null, null);
+        Cursor cursors = db.query(true, "Cities", new String[]{"province_geocode", "province"},
+                null, null, null, null, null, null);
         dataList.clear();
-        if (cursor.moveToFirst()) {
+        if (cursors.moveToFirst()) {
             do {
-                String name = cursor.getString(cursor.getColumnIndex("name"));
-                String code = cursor.getString(cursor.getColumnIndex("code"));
-                provinceList.add(new Province(code, name));
-                dataList.add(name);
-            } while (cursor.moveToNext());
+                int province_geocode = cursors.getInt(cursors.getColumnIndex("province_geocode"));
+                String province1 = cursors.getString(cursors.getColumnIndex("province"));
+                provinceList.add(new Province(province_geocode, province1));
+                dataList.add(province1);
+            } while (cursors.moveToNext());
         }
         adapter.notifyDataSetChanged();
         listView.setSelection(0);
@@ -139,16 +153,18 @@ public class ChooseAreaFragment extends Fragment {
     private void queryCities() {
         titleText.setText(selectedProvince.getName());
         backButton.setVisibility(View.VISIBLE);
-        Cursor cursor = db.query("City", null, "provinceCode = ?", new String[]{selectedProvince.getCode()}, null, null, null);
+        Cursor cursors = db.query(true, "Cities", new String[]{"city_geocode", "city", "province_geocode"},
+                "province_geocode=?", new String[]{String.valueOf(selectedProvince.getCode())},
+                null, null, null, null);
         dataList.clear();
-        if (cursor.moveToFirst()) {
+        if (cursors.moveToFirst()) {
             do {
-                String name = cursor.getString(cursor.getColumnIndex("name"));
-                String code = cursor.getString(cursor.getColumnIndex("code"));
-                String provinceCode = cursor.getString(cursor.getColumnIndex("provinceCode"));
+                int code = cursors.getInt(cursors.getColumnIndex("city_geocode"));
+                String name = cursors.getString(cursors.getColumnIndex("city"));
+                int provinceCode = cursors.getInt(cursors.getColumnIndex("province_geocode"));
                 cityList.add(new City(code, name, provinceCode));
                 dataList.add(name);
-            } while (cursor.moveToNext());
+            } while (cursors.moveToNext());
         }
         adapter.notifyDataSetChanged();
         listView.setSelection(0);
@@ -161,39 +177,22 @@ public class ChooseAreaFragment extends Fragment {
     private void queryCounties() {
         titleText.setText(selectedCity.getName());
         backButton.setVisibility(View.VISIBLE);
-        Cursor cursor = db.query("County", null, "cityCode = ? and provinceCode = ?", new String[]{selectedCity.getCode(),selectedProvince.getCode()}, null, null, null);
+        Cursor cursors = db.query(true, "Cities", new String[]{"district_geocode", "district", "city_geocode", "province_geocode"}, "province_geocode=? and city_geocode=?",
+                new String[]{String.valueOf(selectedProvince.getCode()), String.valueOf(selectedCity.getCode())},
+                null, null, null, null);
         dataList.clear();
-        if (cursor.moveToFirst()) {
+        if (cursors.moveToFirst()) {
             do {
-                String name = cursor.getString(cursor.getColumnIndex("name"));
-                String code = cursor.getString(cursor.getColumnIndex("code"));
-                String provinceCode = cursor.getString(cursor.getColumnIndex("provinceCode"));
-                String cityCode = cursor.getString(cursor.getColumnIndex("cityCode"));
+                int code = cursors.getInt(cursors.getColumnIndex("district_geocode"));
+                String name = cursors.getString(cursors.getColumnIndex("district"));
+                int provinceCode = cursors.getInt(cursors.getColumnIndex("province_geocode"));
+                int cityCode = cursors.getInt(cursors.getColumnIndex("city_geocode"));
                 countyList.add(new County(code, name, cityCode, provinceCode));
                 dataList.add(name);
-            } while (cursor.moveToNext());
+            } while (cursors.moveToNext());
         }
         adapter.notifyDataSetChanged();
         listView.setSelection(0);
         currentLevel = LEVEL_COUNTY;
-    }
-
-    /**
-     * 显示进度对话框
-     */
-    private void showProgressDialog() {
-        if (progressBar == null) {
-            progressBar = new ProgressBar(getActivity());
-        }
-        progressBar.setVisibility(View.VISIBLE);
-    }
-
-    /**
-     * 关闭进度对话框
-     */
-    private void closeProgressDialog() {
-        if (progressBar != null) {
-            progressBar.setVisibility(View.GONE);
-        }
     }
 }

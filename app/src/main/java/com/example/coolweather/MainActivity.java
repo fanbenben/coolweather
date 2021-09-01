@@ -4,12 +4,16 @@ import static org.litepal.LitePalApplication.getContext;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.coolweather.db.Cities;
 import com.example.coolweather.db.City;
 import com.example.coolweather.db.County;
 import com.example.coolweather.db.DatabaseHelper;
@@ -35,6 +39,12 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if (prefs.getString("weather", null) != null) {
+            Intent intent = new Intent(this, WeatherActivity.class);
+            startActivity(intent);
+            finish();
+        }
         initData();
     }
 
@@ -42,9 +52,7 @@ public class MainActivity extends AppCompatActivity {
         dbHelper = SingleDBHelper.getDatabaseHelper();
         context = getContext();
         db = dbHelper.getWritableDatabase();
-        addProvinceData();
-        addCityData();
-        addCountyData();
+        addAllCitiesData();
     }
 
     /**
@@ -52,78 +60,27 @@ public class MainActivity extends AppCompatActivity {
      *
      * @param
      */
-    public void addProvinceData() {
+    public void addAllCitiesData() {
         try {
-            InputStream in = context.getAssets().open("provinces.json");
+            InputStream in = context.getAssets().open("allData.json");
             Gson gson = new Gson();
-            Type type = new TypeToken<ArrayList<Province>>() {
+            Type type = new TypeToken<ArrayList<Cities>>() {
             }.getType();
-            List<Province> provinceList = gson.fromJson(getString(in), type);
-            Cursor cursor = db.query("Province", null, "name=? and code=?",
-                    new String[]{provinceList.get(0).getName(), provinceList.get(0).getCode()}, null, null, null);
+            List<Cities> citiesList = gson.fromJson(getString(in), type);
+            //这里是避免重复添加数据
+            Cursor cursor = db.query("Cities", null, "areacode=?",
+                    new String[]{String.valueOf(citiesList.get(0).getAreacode())}, null, null, null);
             if (cursor.getCount() > 0) return;
             ContentValues values = new ContentValues();
-            for (Province province : provinceList) {
-                values.put("code", province.getCode());
-                values.put("name", province.getName());
-                db.insert("Province", null, values);
-                values.clear();
-            }
-        } catch(IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 往数据库添加市的数据
-     *
-     * @param
-     */
-    public void addCityData() {
-        try {
-            InputStream in = context.getAssets().open("cities.json");
-            Gson gson = new Gson();
-            Type type = new TypeToken<ArrayList<City>>() {
-            }.getType();
-            List<City> cityList = gson.fromJson(getString(in), type);
-            Cursor cursor = db.query("City", null, "name=? and code=?",
-                    new String[]{cityList.get(0).getName(), cityList.get(0).getCode()}, null, null, null);
-            if (cursor.getCount() > 0) return;
-            ContentValues values = new ContentValues();
-            for (City city : cityList) {
-                values.put("provinceCode", city.getProvinceCode());
-                values.put("code", city.getCode());
-                values.put("name", city.getName());
-                db.insert("City", null, values);
-                values.clear();
-            }
-        } catch(IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 往数据库添加县的数据
-     *
-     * @param
-     */
-    public void addCountyData() {
-        try {
-            InputStream in = context.getAssets().open("areas.json");
-            Gson gson = new Gson();
-            Type type = new TypeToken<ArrayList<County>>() {
-            }.getType();
-            List<County> countyList = gson.fromJson(getString(in), type);
-            Cursor cursor = db.query("County", null, "name=? and code=?",
-                    new String[]{countyList.get(0).getName(), countyList.get(0).getCode()}, null, null, null);
-            if (cursor.getCount() > 0) return;
-            ContentValues values = new ContentValues();
-            for (County county : countyList) {
-                values.put("code", county.getCode());
-                values.put("name", county.getName());
-                values.put("cityCode", county.getCityCode());
-                values.put("provinceCode", county.getProvinceCode());
-                db.insert("County", null, values);
+            for (Cities cities : citiesList) {
+                values.put("areacode", cities.getAreacode());
+                values.put("province_geocode", cities.getProvince_geocode());
+                values.put("province", cities.getProvince());
+                values.put("city_geocode", cities.getCity_geocode());
+                values.put("city", cities.getCity());
+                values.put("district_geocode", cities.getDistrict_geocode());
+                values.put("district", cities.getDistrict());
+                db.insert("Cities", null, values);
                 values.clear();
             }
         } catch(IOException e) {

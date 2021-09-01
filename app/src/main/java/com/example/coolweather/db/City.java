@@ -1,17 +1,25 @@
 package com.example.coolweather.db;
 
 public class City {
-    private String code;
+    private Integer code;
     private String name;
-    private String provinceCode;
+    private Integer provinceCode;
 
     public City() {
     }
 
-    public City(String code, String name, String provinceCode) {
+    public City(Integer code, String name, Integer provinceCode) {
         this.code = code;
         this.name = name;
         this.provinceCode = provinceCode;
+    }
+
+    public Integer getCode() {
+        return code;
+    }
+
+    public void setCode(Integer code) {
+        this.code = code;
     }
 
     public String getName() {
@@ -22,19 +30,11 @@ public class City {
         this.name = name;
     }
 
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
-    public String getProvinceCode() {
+    public Integer getProvinceCode() {
         return provinceCode;
     }
 
-    public void setProvinceCode(String provinceCode) {
+    public void setProvinceCode(Integer provinceCode) {
         this.provinceCode = provinceCode;
     }
 }
